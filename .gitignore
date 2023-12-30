@@ -1,0 +1,3 @@
+*.ipynb
+*.sh
+__pycache__

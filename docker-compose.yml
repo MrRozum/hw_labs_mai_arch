@@ -1,0 +1,68 @@
+version: '3.2'
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb:latest
+    restart: unless-stopped
+    environment:
+      MARIADB_USER: admin
+      MARIADB_PASSWORD: root
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: api_db
+    volumes:
+      # - ./mariadb/data:/var/lib/mysql
+      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - api_network
+    healthcheck:
+        test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+        start_period: 1m
+        start_interval: 10s
+        interval: 1m
+        timeout: 5s
+        retries: 3
+
+  rest_api:
+    container_name: api
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    # image: marketplace_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - api_network
+
+networks:
+  api_network:
+    driver: bridge
+
+# uncomment preceding to add local volume for database
+# volumes:
+#   mariadb_data_volume:
+#     # Configuration related to mariadb container volume
+#     # For example:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       device: /var/lib/mysql
+#       o: bind
+#   mariadb_init_sql_volume:
+#     # Configuration related to mariadb initialization SQL file volume
+#     # For example:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       device: /docker-entrypoint-initdb.d/init.sql
+#       o: bind
+
+
+

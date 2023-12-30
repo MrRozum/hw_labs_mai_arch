@@ -1,0 +1,13 @@
+FROM mariadb:latest
+
+USER root
+
+# Install mysql-client package
+RUN apt-get update && apt-get install -y \
+    mysql-client \
+    vim \
+    curl
+
+# Add a health check
+HEALTHCHECK --start-period=5m \
+  CMD mysqladmin ping -uroot -proot || exit 1
